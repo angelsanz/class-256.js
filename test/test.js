@@ -175,3 +175,59 @@ describe('test', function() {
 		assert.instanceOf(bottom, Object);
 	});
 });
+
+
+describe('aliasing problems *with private properties*', function() {
+	it("does not have them when enclosing definitions in the constructor (for which we do not need this library...)", function() {
+	  var Base = Class.extend(function(parent) {
+	  	  this.constructor = function() {
+		      var privateAttribute = 42;
+
+			  this.set = function(value) {
+			  	  privateAttribute = value;
+			  };
+
+			  this.get = function() {
+			      return privateAttribute;
+			  };
+	  	  };
+	  });
+
+	  var anInstance = new Base();
+	  var anotherInstance = new Base();
+
+	  anInstance.set(55);
+	  assert.equal(anotherInstance.get(), 42);
+	});
+
+	it("has them when defining private properties outside of the constructor", function() {
+		// Straight from the readme
+		var HelloWorld = Class.extend(function() { // default name of .extend() can be changed via constant
+		    var privateGreeting = 'Hello ';
+		    var world = 'World!'; // private property
+
+		    this.constructor = function(greeting) { // default name of .constructor() can be changed via constant
+		        if (typeof greeting != 'undefined') {
+		            privateGreeting = greeting;
+		        }
+		    };
+
+		    this.say = function() { // public method
+		        return privileged.call(this);
+		    };
+
+		    function privileged() { // private/privileged method
+		        return privateGreeting + world;
+		    }
+		});
+
+		var helloWorld = new HelloWorld()
+		assert.equal(helloWorld.say(), 'Hello World!');
+
+		var hiWorld = new HelloWorld('Hi ')
+		assert.equal(hiWorld.say(), 'Hi World!');
+
+		// BUT!
+		assert.notEqual(helloWorld.say(), 'Hi World!');
+	});
+});
